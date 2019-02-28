@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <title>US Transit</title>
+        <script src="https://d3js.org/d3.v4.min.js"></script>
+        <script src="https://d3js.org/topojson.v3.min.js"></script>
+        <style type="text/css">
+        .states {
+            fill: #e5e5e5;
+            stroke: #fff;
+            stroke-width:2px;
+        }
+        .states:hover {
+            fill: steelblue;
+        }
+        #titlebar {
+            text-align: center;
+        }
+        #body {
+            width: 100%;
+        }
+        #interactive {
+            margin: 0 auto;
+            width: 1100px;
+        }
+        #left-input {
+            display: inline-block;
+        }
+        select {
+            max-width: 100px;
+        }
+        #right-map {
+            float: right;
+        }
+        </style>
+    </head>
+    <body>
+        <div id="titlebar"><h1>US Transit</h1></div>
+        <div id="body">
+            <div id="interactive">
+                <form id="left-input">
+                </form>
+                <svg width="960" height="600" id="right-map"></svg>
+            </div>
+        </div>
+    </body>
+    <script>
+        function createDropdown(parentName, name, options)
+        {
+            parent = d3.select(parentName)
+            title = parent.append("h4")
+            title.html(name)
+            dropdown = parent.append("select")
+            dropdown.attr("name", name)
+            options.forEach(function iterate(op, i)
+            {
+                option = dropdown.append("option")
+                option.attr("value", op)
+                option.html(op)
+            })
+        }
+
+        var width = 960
+        var height = 500
+        
+        var svg = d3.select('#right-map')
+        
+        var projection = d3.geoAlbersUsa()
+            .scale(1000)
+            .translate([width / 2, height / 2])
+        
+        var path = d3.geoPath()
+            .projection(projection)
+
+        d3.csv("transit.csv", function(transit)
+        {
+            createDropdown("#left-input", "Elevation", addAll(unique(transit, "GRD_ELEV")))
+            createDropdown("#left-input", "State", addAll(unique(transit, "STATE")))
+            createDropdown("#left-input", "System", addAll(unique(transit, "SYSTEM")))
+            createDropdown("#left-input", "Zipcode", addAll(unique(transit, "ZIP")))
+            createDropdown("#left-input", "Route", addAll(unique(transit, "RTE_NAME")))
+            createDropdown("#left-input", "Income Level", addAll(unique(transit, "income")))
+            
+            d3.json('us.json', function(error, us)
+            {
+                svg.selectAll('.states')
+                    .data(topojson.feature(us, us.objects.usStates).features)
+                    .enter()
+                    .append('path')
+                    .attr('class', 'states')
+                    .attr('d', path)
+                    .on('mouseover', function(d){
+                        var name = d.properties.STATE_ABBR
+                        console.log(name)
+                    });
+            
+                svg.selectAll('circle')
+                    .data(select(transit, "GRD_ELEV", "GROUND")).enter()
+                    .append("circle")
+                    .attr("transform", function (d) { return "translate(" + projection([d.LONGITUDE, d.LATITUDE]) + ")"})
+                    .attr("r", "2px")
+                    .attr("fill", "yellow")
+            })
+        })
+
+        function select(data, key, value)
+        {
+            result = [];
+            data.forEach(function(row)
+            {
+                if(row[key] == value)
+                {
+                    result.push(row)
+                }
+            })
+            return result
+        }
+
+        function unique(data, key)
+        {
+            result = [];
+            data.forEach(function(row)
+            {
+                value = row[key]
+                if(!result.includes(value))
+                {
+                    result.push(value)
+                }
+            })
+            return result
+        }
+
+        function addAll(list)
+        {
+            list.unshift('ALL')
+            return list
+        }
+    </script>
+</html>
