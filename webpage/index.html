@@ -60,16 +60,20 @@
 
         d3.csv("transit.csv", function(transit)
         {
-            function createDropdown(parentName, name, options, onChange)
+            function createDropdown(parentName, name, onChange)
             {
                 parent = d3.select(parentName)
                 title = parent.append("h4")
                 title.html(name)
                 dropdown = parent.append("select")
                 dropdown.attr("name", name).attr("id", name)
-                
                 dropdown.on("change", onChange)
+                return dropdown
+            }
 
+            function populateDropdown(dropdown, options)
+            {
+                dropdown.selectAll('option').remove()
                 dropdown.selectAll('option')
                     .data(options).enter()
                     .append("option")
@@ -77,7 +81,7 @@
                     .text(function (d) { return d })
             }
 
-            var columns = ["GRD_ELEV", "STATE", "SYSTEM", "ZIP", "RTE_NAME", "income"]
+            var columns = ["GRD_ELEV", "STATE", "SYSTEM", "RTE_NAME", "ZIP", "income"]
             var selections = ["ALL", "ALL", "ALL", "ALL", "ALL", "ALL"]
 
             function plotData()
@@ -90,32 +94,53 @@
                     .attr("transform", function (d) { return "translate(" + projection([d.LONGITUDE, d.LATITUDE]) + ")"})
                     .attr("r", "2px")
                     .attr("fill", "red")
+                    .on('mouseover', function(d){
+                        var name = d.STATION
+                        console.log(name)
+                    })
             }
 
-            createDropdown("#left-input", "Elevation", addAll(unique(transit, "GRD_ELEV")), function(d) {
+            elev = createDropdown("#left-input", "Elevation", function(d) {
                 selections[0] = d3.select(this).property("value")
                 plotData()
             })
-            createDropdown("#left-input", "State", addAll(unique(transit, "STATE")), function(d) {
+            populateDropdown(elev, addAll(unique(transit, "GRD_ELEV")))
+
+            state = createDropdown("#left-input", "State", function(d) {
                 selections[1] = d3.select(this).property("value")
                 plotData()
+                populateDropdown(system, addAll(unique(select(transit, ["STATE"], [selections[1]]), "SYSTEM")))
+                populateDropdown(zip, addAll(unique(select(transit, ["STATE"], [selections[1]]), "ZIP")))
+                populateDropdown(route, addAll(unique(select(transit, ["STATE"], [selections[1]]), "RTE_NAME")))
             })
-            createDropdown("#left-input", "System", addAll(unique(transit, "SYSTEM")), function(d) {
+            populateDropdown(state, addAll(unique(transit, "STATE")))
+
+            system = createDropdown("#left-input", "System", function(d) {
                 selections[2] = d3.select(this).property("value")
                 plotData()
+                populateDropdown(zip, addAll(unique(select(transit, ["SYSTEM"], [selections[2]]), "ZIP")))
+                populateDropdown(route, addAll(unique(select(transit, ["SYSTEM"], [selections[2]]), "RTE_NAME")))
             })
-            createDropdown("#left-input", "Zipcode", addAll(unique(transit, "ZIP")), function(d) {
+            populateDropdown(system, addAll(unique(transit, "SYSTEM")))
+
+            route = createDropdown("#left-input", "Route", function(d) {
                 selections[3] = d3.select(this).property("value")
                 plotData()
+                populateDropdown(zip, addAll(unique(select(transit, ["RTE_NAME"], [selections[3]]), "ZIP")))
             })
-            createDropdown("#left-input", "Route", addAll(unique(transit, "RTE_NAME")), function(d) {
+            populateDropdown(route, addAll(unique(transit, "RTE_NAME")))
+
+            zip = createDropdown("#left-input", "Zipcode", function(d) {
                 selections[4] = d3.select(this).property("value")
                 plotData()
             })
-            createDropdown("#left-input", "Income Level", addAll(unique(transit, "income")), function(d) {
+            populateDropdown(zip, addAll(unique(transit, "ZIP")))
+
+            income = createDropdown("#left-input", "Income Level", function(d) {
                 selections[5] = d3.select(this).property("value")
                 plotData()
             })
+            populateDropdown(income, addAll(unique(transit, "income")))
             
             d3.json('us.json', function(error, us)
             {
@@ -127,7 +152,7 @@
                     .attr('d', path)
                     .on('mouseover', function(d){
                         var name = d.properties.STATE_ABBR
-                        console.log(name)
+                        //console.log(name)
                     })
                     .on('click', function(d){
                         var name = d.properties.STATE_ABBR
@@ -172,7 +197,7 @@
                     result.push(value)
                 }
             })
-            return result
+            return result.sort()
         }
 
         function addAll(list)
