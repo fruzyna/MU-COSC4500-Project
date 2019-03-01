@@ -46,21 +46,6 @@
         </div>
     </body>
     <script>
-        function createDropdown(parentName, name, options)
-        {
-            parent = d3.select(parentName)
-            title = parent.append("h4")
-            title.html(name)
-            dropdown = parent.append("select")
-            dropdown.attr("name", name)
-            options.forEach(function iterate(op, i)
-            {
-                option = dropdown.append("option")
-                option.attr("value", op)
-                option.html(op)
-            })
-        }
-
         var width = 960
         var height = 500
         
@@ -75,12 +60,62 @@
 
         d3.csv("transit.csv", function(transit)
         {
-            createDropdown("#left-input", "Elevation", addAll(unique(transit, "GRD_ELEV")))
-            createDropdown("#left-input", "State", addAll(unique(transit, "STATE")))
-            createDropdown("#left-input", "System", addAll(unique(transit, "SYSTEM")))
-            createDropdown("#left-input", "Zipcode", addAll(unique(transit, "ZIP")))
-            createDropdown("#left-input", "Route", addAll(unique(transit, "RTE_NAME")))
-            createDropdown("#left-input", "Income Level", addAll(unique(transit, "income")))
+            function createDropdown(parentName, name, options, onChange)
+            {
+                parent = d3.select(parentName)
+                title = parent.append("h4")
+                title.html(name)
+                dropdown = parent.append("select")
+                dropdown.attr("name", name).attr("id", name)
+                
+                dropdown.on("change", onChange)
+
+                dropdown.selectAll('option')
+                    .data(options).enter()
+                    .append("option")
+                    .attr("value", function (d) { return d })
+                    .text(function (d) { return d })
+            }
+
+            var columns = ["GRD_ELEV", "STATE", "SYSTEM", "ZIP", "RTE_NAME", "income"]
+            var selections = ["ALL", "ALL", "ALL", "ALL", "ALL", "ALL"]
+
+            function plotData()
+            {
+                var data = select(transit, columns, selections)
+                svg.selectAll("circle").remove()
+                svg.selectAll("circle")
+                    .data(data).enter()
+                    .append("circle")
+                    .attr("transform", function (d) { return "translate(" + projection([d.LONGITUDE, d.LATITUDE]) + ")"})
+                    .attr("r", "2px")
+                    .attr("fill", "red")
+            }
+
+            createDropdown("#left-input", "Elevation", addAll(unique(transit, "GRD_ELEV")), function(d) {
+                selections[0] = d3.select(this).property("value")
+                plotData()
+            })
+            createDropdown("#left-input", "State", addAll(unique(transit, "STATE")), function(d) {
+                selections[1] = d3.select(this).property("value")
+                plotData()
+            })
+            createDropdown("#left-input", "System", addAll(unique(transit, "SYSTEM")), function(d) {
+                selections[2] = d3.select(this).property("value")
+                plotData()
+            })
+            createDropdown("#left-input", "Zipcode", addAll(unique(transit, "ZIP")), function(d) {
+                selections[3] = d3.select(this).property("value")
+                plotData()
+            })
+            createDropdown("#left-input", "Route", addAll(unique(transit, "RTE_NAME")), function(d) {
+                selections[4] = d3.select(this).property("value")
+                plotData()
+            })
+            createDropdown("#left-input", "Income Level", addAll(unique(transit, "income")), function(d) {
+                selections[5] = d3.select(this).property("value")
+                plotData()
+            })
             
             d3.json('us.json', function(error, us)
             {
@@ -93,23 +128,32 @@
                     .on('mouseover', function(d){
                         var name = d.properties.STATE_ABBR
                         console.log(name)
+                    })
+                    .on('click', function(d){
+                        var name = d.properties.STATE_ABBR
+                        selections[1] = name
+                        d3.select("#State").property("value", name)
+                        plotData()
                     });
-            
-                svg.selectAll('circle')
-                    .data(select(transit, "GRD_ELEV", "GROUND")).enter()
-                    .append("circle")
-                    .attr("transform", function (d) { return "translate(" + projection([d.LONGITUDE, d.LATITUDE]) + ")"})
-                    .attr("r", "2px")
-                    .attr("fill", "yellow")
+                
+                plotData(transit)
             })
         })
 
-        function select(data, key, value)
+        function select(data, keys, values)
         {
             result = [];
             data.forEach(function(row)
             {
-                if(row[key] == value)
+                var passed = true
+                for(i in keys)
+                {
+                    if(values[i] != "ALL" && row[keys[i]] != values[i])
+                    {
+                        passed = false
+                    }
+                }
+                if(passed)
                 {
                     result.push(row)
                 }
