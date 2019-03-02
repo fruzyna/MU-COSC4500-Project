@@ -133,7 +133,7 @@
             // load in map data to draw states
             d3.json('us.json', function(error, us)
             {
-                svg.selectAll('.states')
+                var p = svg.selectAll('.states')
                     .data(topojson.feature(us, us.objects.usStates).features)
                     .enter()
                     .append('path')
@@ -147,8 +147,29 @@
                         selections[3] = "ALL"
                         selections[4] = "ALL"
                         d3.select("#State").property("value", name)
+                        
+                        var currScale = projection.scale()
+                        var currTranslate = projection.translate()
+
+                        var bounds = path.bounds(d)
+                        // distance from the edges
+                        var dx = bounds[1][0] - bounds[0][0]
+                        var dy = bounds[1][1] - bounds[0][1]
+                        // center point
+                        var x = (bounds[0][0] + bounds[1][0]) / 2
+                        var y = (bounds[0][1] + bounds[1][1]) / 2
+                        var scale = 0.95 / Math.max(dx / width, dy / height)
+                        var translate = [width/2 + scale*(currTranslate[0] - x), height/2 + scale*(currTranslate[1] - y)]
+
+                        console.log(currTranslate)
+                        console.log(translate)
+                        console.log(x + ", " + y)
+                        projection.translate(translate)
+                        projection.scale(scale * currScale)
+                        p.attr('d', path)
+
                         plotData()
-                    });
+                    })
                 
                 plotData(transit)
             })
