@@ -13,6 +13,13 @@ stations$SOURCE <- NULL
 stations$SOURCEDATE <- NULL
 stations$ADDRESS <- NULL
 
+# no tax data for PR
+stations <- stations[stations$STATE != "PR",]
+
+# add leading zeros to zip codes
+library(stringr)
+stations$ZIP <- apply(stations, 1, function(row) str_replace_all(str_pad(toString(row['ZIP']), 5), " ", "0")) # for some reason setting pad to 0 doesn't work
+
 # read route data
 routes <- read.csv('rawData/Routes_and_Stations.csv')
 routes$OBJECTID <- NULL
@@ -29,10 +36,18 @@ taxes <- taxes %>%
   summarise_all(sum)
 
 # compute average income for the zip code
-taxes$avg <- taxes$total / taxes$count * 1000
+taxes$avg <- as.integer(taxes$total / taxes$count * 1000)
+
+# put taxes into brackets
+taxes$bracket <- apply(taxes, 1, function(row) round(row['avg'] / 10000))
+taxes$bracket <- apply(taxes, 1, function(row) ifelse(row['bracket'] > 10, "> 10", toString(row['bracket'])))
+
+# add leading zeros to zip codes
+taxes$zip <- apply(taxes, 1, function(row) str_replace_all(str_pad(toString(row['zip']), 5), " ", "0")) # had to be below the above line for some reason
 
 # append tax data to station data
 stations$income <- apply(stations, 1, function(row) paste(taxes[taxes$zip == row['ZIP'], 'avg'], collapse=' '))
+stations$bracket <- apply(stations, 1, function(row) paste(taxes[taxes$zip == row['ZIP'], 'bracket'], collapse=' '))
 
 # find matched routes for the stations
 stations$RTE_NAME <- apply(stations, 1, function(row) paste(routes[routes$STA_ID == row['STA_ID'], 'RTE_ID_SYS'], collapse=','))
@@ -46,4 +61,4 @@ stations$RTE_NAME <- apply(stations, 1, function(row) paste(routes[routes$STA_ID
 # length(aStations)
 
 # save the data to transit.csv
-write.csv(stations, file='transit.csv')
+write.csv(stations, file='webpage/transit.csv')

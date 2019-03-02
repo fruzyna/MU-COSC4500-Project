@@ -74,7 +74,7 @@
         d3.csv("transit.csv", function(transit)
         {
             // column names and current selections
-            var columns = ["GRD_ELEV", "STATE", "SYSTEM", "RTE_NAME", "ZIP", "income"]
+            var columns = ["GRD_ELEV", "STATE", "SYSTEM", "RTE_NAME", "ZIP", "bracket"]
             var selections = ["ALL", "ALL", "ALL", "ALL", "ALL", "ALL"]
 
             // creates a tooltip object for hover over
@@ -128,7 +128,7 @@
                 selections[5] = d3.select(this).property("value")
                 plotData()
             })
-            populateDropdown(income, addAll(unique(transit, "income")))
+            populateDropdown(income, addAll(unique(transit, "bracket")))
 
             // load in map data to draw states
             d3.json('us.json', function(error, us)
