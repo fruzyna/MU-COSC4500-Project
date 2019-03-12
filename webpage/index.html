@@ -219,7 +219,27 @@
                     .append("circle")
                     .attr("transform", function (d) { return "translate(" + projection([d.LONGITUDE, d.LATITUDE]) + ")"})
                     .attr("r", "2px")
-                    .attr("fill", "red")
+                    .attr("fill", function(d) {
+                        // use a gradient to color dots
+                        var grad = [{ key: '1', value: '#ff0000' },
+                                    { key: '2', value: '#ff3300' },
+                                    { key: '3', value: '#ff6600' },
+                                    { key: '4', value: '#ff9900' },
+                                    { key: '5', value: '#ffcc00' },
+                                    { key: '6', value: '#feff00' },
+                                    { key: '7', value: '#cbff00' },
+                                    { key: '8', value: '#98ff00' },
+                                    { key: '9', value: '#65ff00' },
+                                    { key: '10', value: '#32ff00' },
+                                    { key: '> 10', value: '#00ff00' }]
+                        if(grad[d.bracket] === undefined) {
+                            // black if there is no data
+                            return 'black'
+                        }
+                        else {
+                            return grad[d.bracket].value
+                        }
+                    })
                     .on('mouseover', function(d) {
                         // on mouse over show name and income in tooltip
                         var name = d.STATION
