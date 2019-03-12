@@ -70,69 +70,81 @@
         var path = d3.geoPath()
             .projection(projection)
 
+        var dScale = projection.scale()
+        var dTranslate = projection.translate()
+
         // load in transit data
         d3.csv("transit.csv", function(transit)
         {
             // column names and current selections
-            var columns = ["GRD_ELEV", "STATE", "SYSTEM", "RTE_NAME", "ZIP", "bracket"]
-            var selections = ["ALL", "ALL", "ALL", "ALL", "ALL", "ALL"]
+            var columns = ["STATE", "SYSTEM", "RTE_NAME", "ZIP", "bracket"]
+            var selections = ["ALL", "ALL", "ALL", "ALL", "ALL"]
 
             // creates a tooltip object for hover over
             var ttip = d3.select("body").append("div")	
                 .attr("class", "tooltip")				
                 .style("opacity", 0);
 
-            // create and populate a dropdown for elevation
-            elev = createDropdown("#left-input", "Elevation", function(d) {
-                selections[0] = d3.select(this).property("value")
-                plotData()
-            })
-            populateDropdown(elev, addAll(unique(transit, "GRD_ELEV")))
-
-            // create and populate a dropdown for state
-            state = createDropdown("#left-input", "State", function(d) {
-                selections[1] = d3.select(this).property("value")
-                plotData()
-                populateDropdown(system, addAll(unique(select(transit, ["STATE"], [selections[1]]), "SYSTEM")))
-                populateDropdown(zip, addAll(unique(select(transit, ["STATE"], [selections[1]]), "ZIP")))
-                populateDropdown(route, addAll(unique(select(transit, ["STATE"], [selections[1]]), "RTE_NAME")))
-            })
-            populateDropdown(state, addAll(unique(transit, "STATE")))
-
-            // create and populate a dropdown for system
-            system = createDropdown("#left-input", "System", function(d) {
-                selections[2] = d3.select(this).property("value")
-                plotData()
-                populateDropdown(zip, addAll(unique(select(transit, ["SYSTEM"], [selections[2]]), "ZIP")))
-                populateDropdown(route, addAll(unique(select(transit, ["SYSTEM"], [selections[2]]), "RTE_NAME")))
-            })
-            populateDropdown(system, addAll(unique(transit, "SYSTEM")))
-
-            // create and populate a dropdown for route
-            route = createDropdown("#left-input", "Route", function(d) {
-                selections[3] = d3.select(this).property("value")
-                plotData()
-                populateDropdown(zip, addAll(unique(select(transit, ["RTE_NAME"], [selections[3]]), "ZIP")))
-            })
-            populateDropdown(route, addAll(unique(transit, "RTE_NAME")))
-
-            // create and populate a dropdown for zip code
-            zip = createDropdown("#left-input", "Zipcode", function(d) {
-                selections[4] = d3.select(this).property("value")
-                plotData()
-            })
-            populateDropdown(zip, addAll(unique(transit, "ZIP")))
-
-            // create and populate a dropdown for income level
-            income = createDropdown("#left-input", "Income Level", function(d) {
-                selections[5] = d3.select(this).property("value")
-                plotData()
-            })
-            populateDropdown(income, addAll(unique(transit, "bracket")))
-
             // load in map data to draw states
             d3.json('us.json', function(error, us)
             {
+                // create and populate a dropdown for state
+                state = createDropdown("#left-input", "State", function(d) {
+                    selections[0] = d3.select(this).property("value")
+
+                    // zoom in on the selected state
+                    if(selections[0] == 'ALL') {
+                        resetZoom()
+                    }
+                    else {
+                        for(i in topojson.feature(us, us.objects.usStates).features) {
+                            var d = topojson.feature(us, us.objects.usStates).features[i]
+                            if(d.properties.STATE_ABBR == selections[0]) {
+                                selectState(selections[0], d)
+                                break
+                            }
+                        }
+                    }
+                    plotData()
+
+                    populateDropdown(system, addAll(unique(select(transit, ["STATE"], [selections[0]]), "SYSTEM")))
+                    populateDropdown(zip, addAll(unique(select(transit, ["STATE"], [selections[0]]), "ZIP")))
+                    populateDropdown(route, addAll(unique(select(transit, ["STATE"], [selections[0]]), "RTE_NAME")))
+                })
+                populateDropdown(state, addAll(unique(transit, "STATE")))
+
+                // create and populate a dropdown for system
+                system = createDropdown("#left-input", "System", function(d) {
+                    selections[1] = d3.select(this).property("value")
+                    plotData()
+                    populateDropdown(zip, addAll(unique(select(transit, ["SYSTEM"], [selections[1]]), "ZIP")))
+                    populateDropdown(route, addAll(unique(select(transit, ["SYSTEM"], [selections[1]]), "RTE_NAME")))
+                })
+                populateDropdown(system, addAll(unique(transit, "SYSTEM")))
+
+                // create and populate a dropdown for route
+                route = createDropdown("#left-input", "Route", function(d) {
+                    selections[2] = d3.select(this).property("value")
+                    plotData()
+                    populateDropdown(zip, addAll(unique(select(transit, ["RTE_NAME"], [selections[2]]), "ZIP")))
+                })
+                populateDropdown(route, addAll(unique(transit, "RTE_NAME")))
+
+                // create and populate a dropdown for zip code
+                zip = createDropdown("#left-input", "Zipcode", function(d) {
+                    selections[3] = d3.select(this).property("value")
+                    plotData()
+                })
+                populateDropdown(zip, addAll(unique(transit, "ZIP")))
+
+                // create and populate a dropdown for income level
+                income = createDropdown("#left-input", "Income Level", function(d) {
+                    selections[4] = d3.select(this).property("value")
+                    plotData()
+                })
+                populateDropdown(income, addAll(unique(transit, "bracket")))
+
+                // create all states
                 var p = svg.selectAll('.states')
                     .data(topojson.feature(us, us.objects.usStates).features)
                     .enter()
@@ -142,36 +154,59 @@
                     .on('click', function(d) {
                         // select a state by clicking it
                         var name = d.properties.STATE_ABBR
-                        selections[1] = name
-                        selections[2] = "ALL"
-                        selections[3] = "ALL"
-                        selections[4] = "ALL"
-                        d3.select("#State").property("value", name)
-                        
-                        var currScale = projection.scale()
-                        var currTranslate = projection.translate()
-
-                        var bounds = path.bounds(d)
-                        // distance from the edges
-                        var dx = bounds[1][0] - bounds[0][0]
-                        var dy = bounds[1][1] - bounds[0][1]
-                        // center point
-                        var x = (bounds[0][0] + bounds[1][0]) / 2
-                        var y = (bounds[0][1] + bounds[1][1]) / 2
-                        var scale = 0.95 / Math.max(dx / width, dy / height)
-                        var translate = [width/2 + scale*(currTranslate[0] - x), height/2 + scale*(currTranslate[1] - y)]
-
-                        console.log(currTranslate)
-                        console.log(translate)
-                        console.log(x + ", " + y)
-                        projection.translate(translate)
-                        projection.scale(scale * currScale)
-                        p.attr('d', path)
-
-                        plotData()
+                        selectState(name, d)
                     })
                 
-                plotData(transit)
+                plotData()
+                
+                // create reset button
+                var left = d3.select("#left-input")
+                left.append("br")
+                left.append("br")
+                left.append("button").attr('id', 'reset').attr('type', 'button').text('Reset Zoom')
+                    .on('click', function(d) {
+                        selections[0] = "ALL"
+                        d3.select("#State").property("value", 'ALL')
+                        resetZoom()
+                        plotData()
+                    })
+
+                // reset zoom on map
+                function resetZoom() {
+                    projection.translate(dTranslate)
+                    projection.scale(dScale)
+                    p.attr('d', path)
+                }
+
+                // zoom in on a given state
+                function selectState(name, d) {
+                    selections[0] = name
+                    selections[1] = "ALL"
+                    selections[2] = "ALL"
+                    selections[3] = "ALL"
+                    d3.select("#State").property("value", name)
+
+                    // get the current state of the map
+                    var currScale = projection.scale()
+                    var currTranslate = projection.translate()
+
+                    // calculate translation and scale
+                    var bounds = path.bounds(d)
+                    // distance from the edges
+                    var dx = bounds[1][0] - bounds[0][0]
+                    var dy = bounds[1][1] - bounds[0][1]
+                    // center point
+                    var x = (bounds[0][0] + bounds[1][0]) / 2
+                    var y = (bounds[0][1] + bounds[1][1]) / 2
+                    var scale = 0.95 / Math.max(dx / width, dy / height)
+                    var translate = [width/2 + scale*(currTranslate[0] - x), height/2 + scale*(currTranslate[1] - y)]
+
+                    // apply translate and sclae
+                    projection.translate(translate)
+                    projection.scale(scale * currScale)
+                    p.attr('d', path)
+                    plotData()
+                }
             })
 
             // function to plot current selected data on the map
@@ -206,7 +241,7 @@
                     .on('click', function(d) {
                         // filter by route by clicking
                         var route = d.RTE_NAME
-                        selections[3] = route
+                        selections[2] = route
                         d3.select("#Route").property("value", route)
                         plotData()
                     })
