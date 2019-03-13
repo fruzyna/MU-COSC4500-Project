@@ -1,13 +1,13 @@
 <!DOCTYPE html>
 <html>
     <head>
-        <meta charset="UTF-8">
+        <meta charset='UTF-8'>
         <title>US Transit</title>
-        <script src="https://d3js.org/d3.v4.min.js"></script>
-        <script src="https://d3js.org/topojson.v3.min.js"></script>
-        <style type="text/css">
+        <script src='https://d3js.org/d3.v4.min.js'></script>
+        <script src='https://d3js.org/topojson.v3.min.js'></script>
+        <style type='text/css'>
         .states {
-            fill: #e5e5e5;
+            fill: #eeeeee;
             stroke: #fff;
             stroke-width:2px;
         }
@@ -46,15 +46,19 @@
         </style>
     </head>
     <body>
-        <div id="titlebar"><h1>US Transit</h1></div>
-        <div id="body">
-            <div id="interactive">
-                <form id="left-input">
+        <div id='titlebar'><h1>US Transit</h1></div>
+        <div id='body'>
+            <div id='interactive'>
+                <form id='left-input'>
                 </form>
-                <svg width="960" height="600" id="right-map"></svg>
+                <svg width='960' height='600' id='right-map'></svg>
             </div>
         </div>
     </body>
+
+    <!--
+        Script
+    -->
     
     <script>
         var width = 960
@@ -67,80 +71,72 @@
             .scale(1000)
             .translate([width / 2, height / 2])
         
-        var path = d3.geoPath()
-            .projection(projection)
+        var path = d3.geoPath().projection(projection)
 
+        // default values
         var dScale = projection.scale()
         var dTranslate = projection.translate()
 
-        // load in transit data
-        d3.csv("transit.csv", function(transit)
-        {
-            // column names and current selections
-            var columns = ["STATE", "SYSTEM", "RTE_NAME", "ZIP", "bracket"]
-            var selections = ["ALL", "ALL", "ALL", "ALL", "ALL"]
+        // column names and current selections
+        var columns = ['STATE', 'SYSTEM', 'RTE_NAME', 'ZIP', 'bracket']
+        var selections = ['ALL', 'ALL', 'ALL', 'ALL', 'ALL']
 
+        // load in transit data
+        d3.csv('transit.csv', function(transit)
+        {
             // creates a tooltip object for hover over
-            var ttip = d3.select("body").append("div")	
-                .attr("class", "tooltip")				
-                .style("opacity", 0);
+            var ttip = d3.select('body').append('div')	
+                .attr('class', 'tooltip')				
+                .style('opacity', 0);
 
             // load in map data to draw states
             d3.json('us.json', function(error, us)
             {
                 // create and populate a dropdown for state
-                state = createDropdown("#left-input", "State", function(d) {
-                    selections[0] = d3.select(this).property("value")
+                state = createDropdown('#left-input', 'State', function(d) {
+                    name = d3.select(this).property('value')
 
                     // zoom in on the selected state
-                    if(selections[0] == 'ALL') {
+                    if(name == 'ALL') {
                         resetZoom()
                     }
                     else {
                         for(i in topojson.feature(us, us.objects.usStates).features) {
                             var d = topojson.feature(us, us.objects.usStates).features[i]
-                            if(d.properties.STATE_ABBR == selections[0]) {
-                                selectState(selections[0], d)
+                            if(d.properties.STATE_ABBR == name) {
+                                selectState(name, d)
                                 break
                             }
                         }
                     }
-                    plotData()
                 })
-                populateDropdown(state, addAll(unique(transit, "STATE")))
+                populateDropdown(state, addAll(unique(transit, 'STATE')))
 
                 // create and populate a dropdown for system
-                system = createDropdown("#left-input", "System", function(d) {
-                    selections[1] = d3.select(this).property("value")
-                    zoomBounds(getBounds(select(transit, columns, selections)), true)
-                    plotData()
-                    populateDropdown(zip, addAll(unique(select(transit, ["SYSTEM"], [selections[1]]), "ZIP")))
-                    populateDropdown(route, addAll(unique(select(transit, ["SYSTEM"], [selections[1]]), "RTE_NAME")))
+                system = createDropdown('#left-input', 'System', function(d) {
+                    selectSystem(d3.select(this).property('value'))
                 })
-                populateDropdown(system, addAll(unique(transit, "SYSTEM")))
+                populateDropdown(system, addAll(unique(transit, 'SYSTEM')))
 
                 // create and populate a dropdown for route
-                route = createDropdown("#left-input", "Route", function(d) {
-                    selections[2] = d3.select(this).property("value")
-                    zoomBounds(getBounds(select(transit, columns, selections)), true)
-                    plotData()
-                    populateDropdown(zip, addAll(unique(select(transit, ["RTE_NAME"], [selections[2]]), "ZIP")))
+                route = createDropdown('#left-input', 'Route', function(d) {
+                    selectRoute(d3.select(this).property('value'))
                 })
-                populateDropdown(route, addAll(unique(transit, "RTE_NAME")))
+                populateDropdown(route, addAll(unique(transit, 'RTE_NAME')))
 
                 // create and populate a dropdown for zip code
-                zip = createDropdown("#left-input", "Zipcode", function(d) {
-                    selections[3] = d3.select(this).property("value")
+                zip = createDropdown('#left-input', 'Zipcode', function(d) {
+                    selections[3] = d3.select(this).property('value')
                     plotData()
                 })
-                populateDropdown(zip, addAll(unique(transit, "ZIP")))
+                populateDropdown(zip, addAll(unique(transit, 'ZIP')))
 
                 // create and populate a dropdown for income level
-                income = createDropdown("#left-input", "Income Level", function(d) {
-                    selections[4] = d3.select(this).property("value")
+                income = createDropdown('#left-input', 'Income Level', function(d) {
+                    selections[4] = d3.select(this).property('value')
                     plotData()
                 })
-                populateDropdown(income, addAll(unique(transit, "bracket")))
+                populateDropdown(income, addAll(unique(transit, 'bracket')))
 
                 // create all states
                 var p = svg.selectAll('.states')
@@ -158,60 +154,64 @@
                 plotData()
                 
                 // create reset button
-                var left = d3.select("#left-input")
-                left.append("br")
-                left.append("br")
-                left.append("button").attr('id', 'reset').attr('type', 'button').text('Reset Zoom')
+                var left = d3.select('#left-input')
+                left.append('br')
+                left.append('br')
+                left.append('button').attr('id', 'reset').attr('type', 'button').text('Reset Zoom')
                     .on('click', function(d) {
-                        selections[0] = 'ALL'
-                        d3.select("#State").property("value", 'ALL')
                         resetZoom()
-                        plotData()
                     })
 
                 // reset zoom on map
                 function resetZoom() {
-                    populateDropdown(system, addAll(unique(select(transit, ["STATE"], [selections[0]]), "SYSTEM")))
-                    populateDropdown(zip, addAll(unique(select(transit, ["STATE"], [selections[0]]), "ZIP")))
-                    populateDropdown(route, addAll(unique(select(transit, ["STATE"], [selections[0]]), "RTE_NAME")))
+                    selections[0] = 'ALL'
+                    selections[1] = 'ALL'
+                    selections[2] = 'ALL'
+                    selections[3] = 'ALL'
+                    d3.select('#State').property('value', 'ALL')
+                    populateDropdown(system, addAll(unique(select(transit, ['STATE'], ['ALL']), 'SYSTEM')))
+                    populateDropdown(zip, addAll(unique(select(transit, ['STATE'], ['ALL']), 'ZIP')))
+                    populateDropdown(route, addAll(unique(select(transit, ['STATE'], ['ALL']), 'RTE_NAME')))
                     projection.translate(dTranslate)
                     projection.scale(dScale)
                     p.attr('d', path)
+                    plotData()
                 }
 
                 // zoom in on a given state
                 function selectState(name, d) {
                     selections[0] = name
-                    selections[1] = "ALL"
-                    selections[2] = "ALL"
-                    selections[3] = "ALL"
-                    d3.select("#State").property("value", name)
+                    selections[1] = 'ALL'
+                    selections[2] = 'ALL'
+                    selections[3] = 'ALL'
+                    d3.select('#State').property('value', name)
 
-                    populateDropdown(system, addAll(unique(select(transit, ["STATE"], [selections[0]]), "SYSTEM")))
-                    populateDropdown(zip, addAll(unique(select(transit, ["STATE"], [selections[0]]), "ZIP")))
-                    populateDropdown(route, addAll(unique(select(transit, ["STATE"], [selections[0]]), "RTE_NAME")))
-/*
-                    // get the current state of the map
-                    var currScale = projection.scale()
-                    var currTranslate = projection.translate()
-
-                    // calculate translation and scale
-                    var bounds = path.bounds(d)
-                    // distance from the edges
-                    var dx = bounds[1][0] - bounds[0][0]
-                    var dy = bounds[1][1] - bounds[0][1]
-                    // center point
-                    var x = (bounds[0][0] + bounds[1][0]) / 2
-                    var y = (bounds[0][1] + bounds[1][1]) / 2
-                    var scale = 0.95 / Math.max(dx / width, dy / height)
-                    var translate = [width/2 + scale*(currTranslate[0] - x), height/2 + scale*(currTranslate[1] - y)]
-
-                    // apply translate and sclae
-                    projection.translate(translate)
-                    projection.scale(scale * currScale)
-                    p.attr('d', path)
-                    plotData()*/
+                    populateDropdown(system, addAll(unique(select(transit, ['STATE'], [name]), 'SYSTEM')))
+                    populateDropdown(zip, addAll(unique(select(transit, ['STATE'], [name]), 'ZIP')))
+                    populateDropdown(route, addAll(unique(select(transit, ['STATE'], [name]), 'RTE_NAME')))
                     zoomBounds(path.bounds(d), false)
+                }
+
+                // zoom in on a given system
+                function selectSystem(name) {
+                    selections[1] = name
+                    selections[2] = 'ALL'
+                    selections[3] = 'ALL'
+                    d3.select('#System').property('value', name)
+
+                    populateDropdown(zip, addAll(unique(select(transit, ['SYSTEM'], [name]), 'ZIP')))
+                    populateDropdown(route, addAll(unique(select(transit, ['SYSTEM'], [name]), 'RTE_NAME')))
+                    zoomBounds(getBounds(select(transit, columns, selections)), true)
+                }
+
+                // zoom in on a given system
+                function selectRoute(name) {
+                    selections[2] = name
+                    selections[3] = 'ALL'
+                    d3.select('#Route').property('value', name)
+
+                    populateDropdown(zip, addAll(unique(select(transit, ['RTE_NAME'], [name]), 'ZIP')))
+                    zoomBounds(getBounds(select(transit, columns, selections)), true)
                 }
 
                 // zoom in on a given state
@@ -245,77 +245,75 @@
                     p.attr('d', path)
                     plotData()
                 }
-            })
 
-            // function to plot current selected data on the map
-            function plotData()
-            {
-                var data = select(transit, columns, selections)
-                svg.selectAll("circle").remove()
-                svg.selectAll("circle")
-                    .data(data).enter()
-                    .append("circle")
-                    .attr("transform", function (d) { return "translate(" + projection([d.LONGITUDE, d.LATITUDE]) + ")"})
-                    .attr("r", "2px")
-                    .attr("fill", function(d) {
-                        // use a gradient to color dots
-                        var grad = [{ key: '1', value: '#ff0000' },
-                                    { key: '2', value: '#ff3300' },
-                                    { key: '3', value: '#ff6600' },
-                                    { key: '4', value: '#ff9900' },
-                                    { key: '5', value: '#ffcc00' },
-                                    { key: '6', value: '#feff00' },
-                                    { key: '7', value: '#cbff00' },
-                                    { key: '8', value: '#98ff00' },
-                                    { key: '9', value: '#65ff00' },
-                                    { key: '10', value: '#32ff00' },
-                                    { key: '> 10', value: '#00ff00' }]
-                        if(grad[d.bracket] === undefined) {
-                            // black if there is no data
-                            return 'black'
-                        }
-                        else {
-                            return grad[d.bracket].value
-                        }
-                    })
-                    .on('mouseover', function(d) {
-                        // on mouse over show name and income in tooltip
-                        var name = d.STATION
-                        var income = d.income
-                        console.log(name + " $" + income)
-                        ttip.transition()
-                            .duration(200)
-                            .style("opacity", 0.9)
-                        ttip.html(name + "<br>$" + income)
-                            .style("left", d3.event.pageX + "px")
-                            .style("top", (d3.event.pageY - 28) + "px")
-                    })
-                    .on('mouseout', function(d) {
-                        // hide tooltip on mouseout
-                        ttip.transition()
-                            .duration(500)
-                            .style("opacity", 0)
-                    })
-                    .on('click', function(d) {
-                        // filter by route by clicking
-                        var route = d.RTE_NAME
-                        selections[2] = route
-                        d3.select("#Route").property("value", route)
-                        plotData()
-                    })
-            }
+                // function to plot current selected data on the map
+                function plotData()
+                {
+                    var data = select(transit, columns, selections)
+                    svg.selectAll('circle').remove()
+                    svg.selectAll('circle')
+                        .data(data).enter()
+                        .append('circle')
+                        .attr('transform', function (d) { return 'translate(' + projection([d.LONGITUDE, d.LATITUDE]) + ')'})
+                        .attr('r', '2px')
+                        .attr('fill', function(d) {
+                            // use a gradient to color dots
+                            var grad = [{ key: '1', value: '#ff0000' },
+                                        { key: '2', value: '#ff0000' },
+                                        { key: '3', value: '#ff3800' },
+                                        { key: '4', value: '#ff7100' },
+                                        { key: '5', value: '#ffaa00' },
+                                        { key: '6', value: '#ffe200' },
+                                        { key: '7', value: '#e2ff00' },
+                                        { key: '8', value: '#a9ff00' },
+                                        { key: '9', value: '#71ff00' },
+                                        { key: '10', value: '#38ff00' },
+                                        { key: '> 10', value: '#00ff00' }]
+                            if(grad[d.bracket] === undefined) {
+                                // black if there is no data
+                                return '#00ff00'
+                            }
+                            else {
+                                return grad[d.bracket].value
+                            }
+                        })
+                        .on('mouseover', function(d) {
+                            // on mouse over show name and income in tooltip
+                            var name = d.STATION
+                            var income = d.income
+                            console.log(name + ' $' + income)
+                            ttip.transition()
+                                .duration(200)
+                                .style('opacity', 0.9)
+                            ttip.html(name + '<br>$' + income)
+                                .style('left', d3.event.pageX + 'px')
+                                .style('top', (d3.event.pageY - 28) + 'px')
+                        })
+                        .on('mouseout', function(d) {
+                            // hide tooltip on mouseout
+                            ttip.transition()
+                                .duration(500)
+                                .style('opacity', 0)
+                        })
+                        .on('click', function(d) {
+                            // filter by route by clicking
+                            var route = d.RTE_NAME
+                            selectRoute(route)
+                        })
+                }
+            })
         })
 
         // function to create a dropdown (select)
         function createDropdown(parentName, name, onChange)
         {
             parent = d3.select(parentName)
-            title = parent.append("h4")
+            title = parent.append('h4')
             title.html(name)
-            dropdown = parent.append("select")
-            dropdown.attr("name", name)
-                .attr("id", name)
-                .on("change", onChange)
+            dropdown = parent.append('select')
+            dropdown.attr('name', name)
+                .attr('id', name)
+                .on('change', onChange)
             return dropdown
         }
 
@@ -325,8 +323,8 @@
             dropdown.selectAll('option').remove()
             dropdown.selectAll('option')
                 .data(options).enter()
-                .append("option")
-                .attr("value", function (d) { return d })
+                .append('option')
+                .attr('value', function (d) { return d })
                 .text(function (d) { return d })
         }
 
@@ -339,7 +337,7 @@
                 var passed = true
                 for(i in keys)
                 {
-                    if(values[i] != "ALL" && row[keys[i]] != values[i])
+                    if(values[i] != 'ALL' && row[keys[i]] != values[i])
                     {
                         passed = false
                     }
@@ -367,7 +365,7 @@
             return result.sort()
         }
 
-        // function to add "ALL" to the begining of a list
+        // function to add 'ALL' to the begining of a list
         function addAll(list)
         {
             list.unshift('ALL')
