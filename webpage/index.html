@@ -106,16 +106,13 @@
                         }
                     }
                     plotData()
-
-                    populateDropdown(system, addAll(unique(select(transit, ["STATE"], [selections[0]]), "SYSTEM")))
-                    populateDropdown(zip, addAll(unique(select(transit, ["STATE"], [selections[0]]), "ZIP")))
-                    populateDropdown(route, addAll(unique(select(transit, ["STATE"], [selections[0]]), "RTE_NAME")))
                 })
                 populateDropdown(state, addAll(unique(transit, "STATE")))
 
                 // create and populate a dropdown for system
                 system = createDropdown("#left-input", "System", function(d) {
                     selections[1] = d3.select(this).property("value")
+                    zoomBounds(getBounds(select(transit, columns, selections)), true)
                     plotData()
                     populateDropdown(zip, addAll(unique(select(transit, ["SYSTEM"], [selections[1]]), "ZIP")))
                     populateDropdown(route, addAll(unique(select(transit, ["SYSTEM"], [selections[1]]), "RTE_NAME")))
@@ -125,6 +122,7 @@
                 // create and populate a dropdown for route
                 route = createDropdown("#left-input", "Route", function(d) {
                     selections[2] = d3.select(this).property("value")
+                    zoomBounds(getBounds(select(transit, columns, selections)), true)
                     plotData()
                     populateDropdown(zip, addAll(unique(select(transit, ["RTE_NAME"], [selections[2]]), "ZIP")))
                 })
@@ -165,7 +163,7 @@
                 left.append("br")
                 left.append("button").attr('id', 'reset').attr('type', 'button').text('Reset Zoom')
                     .on('click', function(d) {
-                        selections[0] = "ALL"
+                        selections[0] = 'ALL'
                         d3.select("#State").property("value", 'ALL')
                         resetZoom()
                         plotData()
@@ -173,6 +171,9 @@
 
                 // reset zoom on map
                 function resetZoom() {
+                    populateDropdown(system, addAll(unique(select(transit, ["STATE"], [selections[0]]), "SYSTEM")))
+                    populateDropdown(zip, addAll(unique(select(transit, ["STATE"], [selections[0]]), "ZIP")))
+                    populateDropdown(route, addAll(unique(select(transit, ["STATE"], [selections[0]]), "RTE_NAME")))
                     projection.translate(dTranslate)
                     projection.scale(dScale)
                     p.attr('d', path)
@@ -186,6 +187,10 @@
                     selections[3] = "ALL"
                     d3.select("#State").property("value", name)
 
+                    populateDropdown(system, addAll(unique(select(transit, ["STATE"], [selections[0]]), "SYSTEM")))
+                    populateDropdown(zip, addAll(unique(select(transit, ["STATE"], [selections[0]]), "ZIP")))
+                    populateDropdown(route, addAll(unique(select(transit, ["STATE"], [selections[0]]), "RTE_NAME")))
+/*
                     // get the current state of the map
                     var currScale = projection.scale()
                     var currTranslate = projection.translate()
@@ -198,6 +203,39 @@
                     // center point
                     var x = (bounds[0][0] + bounds[1][0]) / 2
                     var y = (bounds[0][1] + bounds[1][1]) / 2
+                    var scale = 0.95 / Math.max(dx / width, dy / height)
+                    var translate = [width/2 + scale*(currTranslate[0] - x), height/2 + scale*(currTranslate[1] - y)]
+
+                    // apply translate and sclae
+                    projection.translate(translate)
+                    projection.scale(scale * currScale)
+                    p.attr('d', path)
+                    plotData()*/
+                    zoomBounds(path.bounds(d), false)
+                }
+
+                // zoom in on a given state
+                function zoomBounds(bounds, project) {
+                    // get the current state of the map
+                    var currScale = projection.scale()
+                    var currTranslate = projection.translate()
+
+                    if(project) {
+                        bl = projection(bounds[0])
+                        tr = projection(bounds[1])
+                    }
+                    else {
+                        bl = bounds[0]
+                        tr = bounds[1]
+                    }
+
+                    // calculate translation and scale
+                    // distance from the edges
+                    var dx = tr[0] - bl[0]
+                    var dy = tr[1] - bl[1]
+                    // center point
+                    var x = (bl[0] + tr[0]) / 2
+                    var y = (bl[1] + tr[1]) / 2
                     var scale = 0.95 / Math.max(dx / width, dy / height)
                     var translate = [width/2 + scale*(currTranslate[0] - x), height/2 + scale*(currTranslate[1] - y)]
 
@@ -334,6 +372,30 @@
         {
             list.unshift('ALL')
             return list
+        }
+
+        // find bounds of a set of points
+        function getBounds(data) {
+            var left = data[0].LONGITUDE
+            var right = data[0].LONGITUDE
+            var top = data[0].LATITUDE
+            var bottom = data[0].LATITUDE
+            for(i in data) {
+                d = data[i]
+                if(d.LONGITUDE < left) {
+                    left = d.LONGITUDE
+                }
+                else if(d.LONGITUDE > right) {
+                    right = d.LONGITUDE
+                }
+                if(d.LATITUDE < bottom) {
+                    bottom = d.LATITUDE
+                }
+                else if(d.LATITUDE > top) {
+                    top = d.LATITUDE
+                }
+            }
+            return [[right, top], [left, bottom]]
         }
     </script>
 </html>
