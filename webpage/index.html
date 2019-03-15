@@ -255,7 +255,7 @@
                         .data(data).enter()
                         .append('circle')
                         .attr('transform', function (d) { return 'translate(' + projection([d.LONGITUDE, d.LATITUDE]) + ')'})
-                        .attr('r', '2px')
+                        .attr('r', '3px')
                         .attr('fill', function(d) {
                             // use a gradient to color dots
                             var grad = [{ key: '1', value: '#ff0000' },
@@ -337,9 +337,21 @@
                 var passed = true
                 for(i in keys)
                 {
-                    if(values[i] != 'ALL' && row[keys[i]] != values[i])
+                    if(values[i] != 'ALL')
                     {
-                        passed = false
+                        var found = false
+                        row[keys[i]].split('||').forEach(function(val)
+                        {
+                            if(val == values[i])
+                            {
+                                found = true
+                            }
+                        })
+                        if(!found)
+                        {
+                            passed = false
+                            break;
+                        }
                     }
                 }
                 if(passed)
@@ -356,11 +368,13 @@
             result = [];
             data.forEach(function(row)
             {
-                value = row[key]
-                if(!result.includes(value))
+                row[key].split("||").forEach(function(value)
                 {
-                    result.push(value)
-                }
+                    if(!result.includes(value))
+                    {
+                        result.push(value)
+                    }
+                })
             })
             return result.sort()
         }

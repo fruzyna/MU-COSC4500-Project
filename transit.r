@@ -50,7 +50,7 @@ stations$income <- apply(stations, 1, function(row) paste(taxes[taxes$zip == row
 stations$bracket <- apply(stations, 1, function(row) paste(taxes[taxes$zip == row['ZIP'], 'bracket'], collapse=' '))
 
 # find matched routes for the stations
-stations$RTE_NAME <- apply(stations, 1, function(row) paste(routes[routes$STA_ID == row['STA_ID'], 'RTE_ID_SYS'], collapse=','))
+stations$RTE_NAME <- apply(stations, 1, function(row) paste(routes[routes$STATIONSYS == row['STATIONSYS'], 'RTE_ID_SYS'], collapse='||'))
 
 # # check if there are unique stations between the 2 sets
 # tStations <- unique(stations$STA_ID)
