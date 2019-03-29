@@ -61,6 +61,21 @@
     -->
     
     <script>
+        // metrics
+        sMapClicks = 0
+        sSelClicks = 0
+        timeSystem = 0
+        timeLine   = 0
+        timeZip    = 0
+        side       = (Math.floor(Math.random() * 2) == 0) ? 'L' : 'R'
+        startTime  = (new Date()).getTime()
+
+        // random sidebar side
+        if(side == 'R') {
+            // move the map so opposite of the sidebar
+            d3.select('#right-map').style('float', 'left')
+        }
+
         var width = 960
         var height = 500
         
@@ -95,6 +110,7 @@
                 // create and populate a dropdown for state
                 state = createDropdown('#left-input', 'State', function(d) {
                     name = d3.select(this).property('value')
+                    sSelClicks++
 
                     // zoom in on the selected state
                     if(name == 'ALL') {
@@ -114,18 +130,30 @@
 
                 // create and populate a dropdown for system
                 system = createDropdown('#left-input', 'System', function(d) {
+                    // stop timer
+                    if(timeSystem > startTime) {
+                        timeSystem = (new Date()).getTime() - timeSystem
+                    }
                     selectSystem(d3.select(this).property('value'))
                 })
                 populateDropdown(system, addAll(unique(transit, 'SYSTEM')))
 
                 // create and populate a dropdown for route
                 route = createDropdown('#left-input', 'Route', function(d) {
+                    // stop timer
+                    if(timeLine > startTime) {
+                        timeLine = (new Date()).getTime() - timeLine
+                    }
                     selectRoute(d3.select(this).property('value'))
                 })
                 populateDropdown(route, addAll(unique(transit, 'RTE_NAME')))
 
                 // create and populate a dropdown for zip code
                 zip = createDropdown('#left-input', 'Zipcode', function(d) {
+                    // stop timer
+                    if(timeZip > startTime) {
+                        timeZip = (new Date()).getTime() - timeZip
+                    }
                     selections[3] = d3.select(this).property('value')
                     plotData()
                 })
@@ -148,6 +176,7 @@
                     .on('click', function(d) {
                         // select a state by clicking it
                         var name = d.properties.STATE_ABBR
+                        sMapClicks++
                         selectState(name, d)
                     })
                 
@@ -160,6 +189,17 @@
                 left.append('button').attr('id', 'reset').attr('type', 'button').text('Reset Zoom')
                     .on('click', function(d) {
                         resetZoom()
+                    })
+                left.append('br')
+                left.append('br')
+                left.append('button').attr('id', 'code').attr('type', 'button').text('Get Code')
+                    .on('click', function(d) {
+                        if((sMapClicks == 0 && sSelClicks == 0) || timeSystem == 0 || timeLine == 0 || timeZip == 0) {
+                            alert('You have not completed the tasks!')
+                        }
+                        else {
+                            alert(sMapClicks + '-' + sSelClicks + '-' + timeSystem + '-' + timeLine + '-' + timeZip + '-' + side)
+                        }
                     })
 
                 // reset zoom on map
@@ -296,9 +336,21 @@
                                 .style('opacity', 0)
                         })
                         .on('click', function(d) {
-                            // filter by route by clicking
-                            var route = d.RTE_NAME
-                            selectRoute(route)
+                            // start timer
+                            if(d.STATION == 'Harvard' && timeSystem == 0) {
+                                timeSystem = (new Date()).getTime()
+                            }
+                            else if(d.STATION == 'Harvard' && timeLine == 0) {
+                                timeLine = (new Date()).getTime()
+                            }
+                            else if(d.STATION == 'Harvard' && timeZip == 0) {
+                                timeZip = (new Date()).getTime()
+                            }
+                            else {
+                                // filter by route by clicking
+                                var route = d.RTE_NAME
+                                selectRoute(route)
+                            }
                         })
                 }
             })
