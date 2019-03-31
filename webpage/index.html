@@ -26,8 +26,19 @@
         }
         #left-input {
             display: inline-block;
+            height: 600px;
+        }
+        h4 {
+            display: inline;
+        }
+        .opTitle {
+            margin-top: 1em;
+            margin-bottom: 1em;
         }
         select {
+            width: 125px;
+        }
+        button {
             width: 125px;
         }
         #right-map {
@@ -42,6 +53,12 @@
             border: 0px;
             border-radius: 8px;
             pointer-events: none;
+            max-width: 150px;
+        }
+        #description {
+            text-align: center;
+            width: 1000px;
+            margin: auto;
         }
         </style>
     </head>
@@ -53,6 +70,13 @@
                 </form>
                 <svg width='960' height='600' id='right-map'></svg>
             </div>
+            <p id='description'>
+                This app was designed to investigate any correlation between location of transit stations and income in the United States. 
+                Stations are displayed as colored dots on the map. 
+                The color indicates the income level of the zip code the station is located in. (Green is high, red is low.) 
+                The dropdowns on the side can be used to filter the stations that are displayed on the map. 
+                Income levels represent the average reported income per person in tens of thousands of dollars.
+            </p>
         </div>
     </body>
 
@@ -108,7 +132,7 @@
             d3.json('us.json', function(error, us)
             {
                 // create and populate a dropdown for state
-                state = createDropdown('#left-input', 'State', function(d) {
+                state = createDropdown('#left-input', 'State', 'Filter stations by state and zoom.', function(d) {
                     name = d3.select(this).property('value')
                     sSelClicks++
 
@@ -129,7 +153,7 @@
                 populateDropdown(state, addAll(unique(transit, 'STATE')))
 
                 // create and populate a dropdown for system
-                system = createDropdown('#left-input', 'System', function(d) {
+                system = createDropdown('#left-input', 'System', 'Filter stations by transit system and zoom.', function(d) {
                     // stop timer
                     if(timeSystem > startTime) {
                         timeSystem = (new Date()).getTime() - timeSystem
@@ -139,7 +163,7 @@
                 populateDropdown(system, addAll(unique(transit, 'SYSTEM')))
 
                 // create and populate a dropdown for route
-                route = createDropdown('#left-input', 'Route', function(d) {
+                route = createDropdown('#left-input', 'Route', 'Filter stations by transit route and zoom.', function(d) {
                     // stop timer
                     if(timeLine > startTime) {
                         timeLine = (new Date()).getTime() - timeLine
@@ -149,7 +173,7 @@
                 populateDropdown(route, addAll(unique(transit, 'RTE_NAME')))
 
                 // create and populate a dropdown for zip code
-                zip = createDropdown('#left-input', 'Zipcode', function(d) {
+                zip = createDropdown('#left-input', 'Zipcode', 'Filter stations by zip code and zoom.', function(d) {
                     // stop timer
                     if(timeZip > startTime) {
                         timeZip = (new Date()).getTime() - timeZip
@@ -160,7 +184,7 @@
                 populateDropdown(zip, addAll(unique(transit, 'ZIP')))
 
                 // create and populate a dropdown for income level
-                income = createDropdown('#left-input', 'Income Level', function(d) {
+                income = createDropdown('#left-input', 'Income Level', 'Filter stations by average income of zipcode (tens of thousands) and zoom.', function(d) {
                     selections[4] = d3.select(this).property('value')
                     plotData()
                 })
@@ -353,21 +377,41 @@
                             }
                         })
                 }
+
+                // function to create a dropdown (select)
+                function createDropdown(parentName, name, helpTxt, onChange)
+                {
+                    parent = d3.select(parentName)
+                    container = parent.append('div')
+                    container.attr('class', 'opTitle')
+                    title = container.append('h4')
+                    title.html(name)
+                    help = container.append('img')
+                    help.attr('src', 'question.png')
+                        .style('float', 'right')
+                        .on('mouseover', function(d) {
+                            // on mouse over show help in tooltip
+                            ttip.transition()
+                                .duration(200)
+                                .style('opacity', 0.9)
+                            ttip.html(helpTxt)
+                                .style('left', d3.event.pageX + 'px')
+                                .style('top', (d3.event.pageY - 28) + 'px')
+                        })
+                        .on('mouseout', function(d) {
+                            // hide tooltip on mouseout
+                            ttip.transition()
+                                .duration(500)
+                                .style('opacity', 0)
+                        })
+                    dropdown = parent.append('select')
+                    dropdown.attr('name', name)
+                        .attr('id', name)
+                        .on('change', onChange)
+                    return dropdown
+                }
             })
         })
-
-        // function to create a dropdown (select)
-        function createDropdown(parentName, name, onChange)
-        {
-            parent = d3.select(parentName)
-            title = parent.append('h4')
-            title.html(name)
-            dropdown = parent.append('select')
-            dropdown.attr('name', name)
-                .attr('id', name)
-                .on('change', onChange)
-            return dropdown
-        }
 
         // function to populate a dropdown (select)
         function populateDropdown(dropdown, options)
