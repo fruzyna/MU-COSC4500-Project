@@ -363,12 +363,15 @@
                             // start timer
                             if(d.STATION == 'Harvard' && timeSystem == 0) {
                                 timeSystem = (new Date()).getTime()
+                                alert('Choose the system "Metra" from the sidebar.')
                             }
                             else if(d.STATION == 'Aurora' && timeLine == 0) {
                                 timeLine = (new Date()).getTime()
+                                alert('Choose the route "RI - Metra" from the sidebar.')
                             }
                             else if(d.STATION == 'Joliet' && timeZip == 0) {
                                 timeZip = (new Date()).getTime()
+                                alert('Choose the zipcode "60406" from the sidebar.')
                             }
                             else {
                                 // filter by route by clicking
