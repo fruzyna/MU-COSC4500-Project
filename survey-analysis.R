@@ -1,0 +1,1 @@
+survey <- read.csv('rawData/survey-data.csv', row.names = 'X')
