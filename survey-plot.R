@@ -24,6 +24,7 @@ barplot(table(survey$Handedness), main = 'Handedness of Participants', xlab = 'D
 barplot(table(survey$Sidebar), main = 'Distribution of Sidebar', xlab = 'Side', ylab = 'Number of Participants')
 
 # demographics
+barplot(table(survey$Age), main = 'Age of Participants', xlab = 'Age', ylab = 'Number of Participants')
 barplot(table(survey$Latino), main = 'Latino Participants', xlab = 'Latino', ylab = 'Number of Participants')
 barplot(table(survey$Race), main = 'Race of Participants', xlab = 'Race', ylab = 'Number of Participants')
 barplot(table(survey$Education), main = 'Education of Participants', xlab = 'Education Level', ylab = 'Number of Participants')
