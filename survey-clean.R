@@ -42,9 +42,16 @@ library(stringr)
 usage <- str_split_fixed(filtered$Usage, '-', 6)
 filtered$MapClicks <- usage[,1]
 filtered$DropClicks <- usage[,2]
-filtered$Time1 <- usage[,3]
-filtered$Time2 <- usage[,4]
-filtered$Time3 <- usage[,5]
+filtered$Time1 <- as.integer(usage[,3])
+filtered$Time2 <- as.integer(usage[,4])
+filtered$Time3 <- as.integer(usage[,5])
+med <- median(filtered$Time1, na.rm = TRUE)
+filtered$Time1 <- as.integer(sapply(as.numeric(usage[,3]), function(x) ifelse(x > 60000, med, x)))
+med <- median(filtered$Time2, na.rm = TRUE)
+filtered$Time2 <- as.integer(sapply(as.numeric(usage[,4]), function(x) ifelse(x > 60000, med, x)))
+med <- median(filtered$Time3, na.rm = TRUE)
+filtered$Time3 <- as.integer(sapply(as.numeric(usage[,5]), function(x) ifelse(x > 60000, med, x)))
+filtered$Total <- filtered$Time1 + filtered$Time2 + filtered$Time3
 filtered$Sidebar <- usage[,6]
 
 write.csv(filtered, file='rawData/survey-data.csv')
